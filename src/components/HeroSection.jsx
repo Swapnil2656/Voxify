@@ -1,13 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import LearnMoreModal from './LearnMoreModal';
 
 const HeroSection = () => {
+  const [isLearnMoreOpen, setIsLearnMoreOpen] = useState(false);
+
   const scrollToTranslationSection = () => {
     const section = document.getElementById('translation-section');
     if (section) {
       section.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  const openLearnMore = () => {
+    setIsLearnMoreOpen(true);
+  };
+
+  const closeLearnMore = () => {
+    setIsLearnMoreOpen(false);
+  };
+
   return (
     <section className="py-12 md:py-20">
       <div className="container mx-auto px-4">
@@ -36,16 +48,15 @@ const HeroSection = () => {
               >
                 Start Translating
               </motion.button>
-              <motion.a
-                href="/learn-more"
+              <motion.button
+                onClick={openLearnMore}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="btn btn-outline btn-lg"
               >
                 Learn More
-              </motion.a>
+              </motion.button>
             </div>
-
           </motion.div>
 
           <motion.div
@@ -76,6 +87,9 @@ const HeroSection = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Learn More Modal */}
+      <LearnMoreModal isOpen={isLearnMoreOpen} onClose={closeLearnMore} />
     </section>
   );
 };
