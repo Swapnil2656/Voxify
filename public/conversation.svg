@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="600px" viewBox="0 0 800 600" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Conversation</title>
+    <defs>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
+            <stop stop-color="#6366F1" offset="0%"></stop>
+            <stop stop-color="#A855F7" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-2">
+            <stop stop-color="#3B82F6" offset="0%"></stop>
+            <stop stop-color="#8B5CF6" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Conversation" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="People" transform="translate(100.000000, 100.000000)">
+            <!-- Person 1 -->
+            <g id="Person1" transform="translate(0.000000, 50.000000)">
+                <circle id="Head" fill="#F9A8D4" cx="75" cy="75" r="75"></circle>
+                <path d="M75,160 C116.421,160 150,193.579 150,235 L150,300 L0,300 L0,235 C0,193.579 33.579,160 75,160 Z" id="Body" fill="#F9A8D4"></path>
+                <circle id="Eye1" fill="#1E293B" cx="50" cy="65" r="10"></circle>
+                <circle id="Eye2" fill="#1E293B" cx="100" cy="65" r="10"></circle>
+                <path d="M60,100 C60,100 75,110 90,100" id="Smile" stroke="#1E293B" stroke-width="5" stroke-linecap="round"></path>
+            </g>
+            
+            <!-- Person 2 -->
+            <g id="Person2" transform="translate(350.000000, 50.000000)">
+                <circle id="Head" fill="#93C5FD" cx="75" cy="75" r="75"></circle>
+                <path d="M75,160 C116.421,160 150,193.579 150,235 L150,300 L0,300 L0,235 C0,193.579 33.579,160 75,160 Z" id="Body" fill="#93C5FD"></path>
+                <circle id="Eye1" fill="#1E293B" cx="50" cy="65" r="10"></circle>
+                <circle id="Eye2" fill="#1E293B" cx="100" cy="65" r="10"></circle>
+                <path d="M60,100 C60,100 75,110 90,100" id="Smile" stroke="#1E293B" stroke-width="5" stroke-linecap="round"></path>
+            </g>
+            
+            <!-- Speech Bubbles -->
+            <g id="SpeechBubbles" transform="translate(100.000000, 0.000000)">
+                <!-- Bubble 1 -->
+                <path d="M0,50 C0,22.386 22.386,0 50,0 L150,0 C177.614,0 200,22.386 200,50 L200,100 C200,127.614 177.614,150 150,150 L125,150 L100,175 L75,150 L50,150 C22.386,150 0,127.614 0,100 L0,50 Z" id="Bubble1" fill="url(#linearGradient-1)" opacity="0.8"></path>
+                <text id="Hello!" font-family="Arial-BoldMT, Arial" font-size="24" font-weight="bold" fill="#FFFFFF">
+                    <tspan x="70" y="85">Hello!</tspan>
+                </text>
+                
+                <!-- Bubble 2 -->
+                <path d="M125,200 C125,172.386 147.386,150 175,150 L275,150 C302.614,150 325,172.386 325,200 L325,250 C325,277.614 302.614,300 275,300 L250,300 L225,325 L200,300 L175,300 C147.386,300 125,277.614 125,250 L125,200 Z" id="Bubble2" fill="url(#linearGradient-2)" opacity="0.8"></path>
+                <text id="Hola!" font-family="Arial-BoldMT, Arial" font-size="24" font-weight="bold" fill="#FFFFFF">
+                    <tspan x="205" y="235">¡Hola!</tspan>
+                </text>
+            </g>
+        </g>
+    </g>
+</svg>

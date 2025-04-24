@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="500" height="400" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="500" height="400" fill="#F8FAFC"/>
+  
+  <!-- Book -->
+  <rect x="100" y="100" width="300" height="200" rx="5" fill="#BFDBFE" stroke="#3B82F6" stroke-width="2"/>
+  <path d="M250 100 L250 300" stroke="#3B82F6" stroke-width="2"/>
+  <path d="M100 130 L400 130" stroke="#3B82F6" stroke-width="1"/>
+  <path d="M100 160 L400 160" stroke="#3B82F6" stroke-width="1"/>
+  <path d="M100 190 L400 190" stroke="#3B82F6" stroke-width="1"/>
+  <path d="M100 220 L400 220" stroke="#3B82F6" stroke-width="1"/>
+  <path d="M100 250 L400 250" stroke="#3B82F6" stroke-width="1"/>
+  <path d="M100 280 L400 280" stroke="#3B82F6" stroke-width="1"/>
+  
+  <!-- Left page content -->
+  <text x="120" y="125" font-family="Arial" font-size="14" fill="#1E40AF">Hello</text>
+  <text x="120" y="155" font-family="Arial" font-size="14" fill="#1E40AF">Thank you</text>
+  <text x="120" y="185" font-family="Arial" font-size="14" fill="#1E40AF">Please</text>
+  <text x="120" y="215" font-family="Arial" font-size="14" fill="#1E40AF">Excuse me</text>
+  <text x="120" y="245" font-family="Arial" font-size="14" fill="#1E40AF">How much?</text>
+  <text x="120" y="275" font-family="Arial" font-size="14" fill="#1E40AF">Where is...?</text>
+  
+  <!-- Right page content -->
+  <text x="270" y="125" font-family="Arial" font-size="14" fill="#D946EF">Hola</text>
+  <text x="270" y="155" font-family="Arial" font-size="14" fill="#D946EF">Gracias</text>
+  <text x="270" y="185" font-family="Arial" font-size="14" fill="#D946EF">Por favor</text>
+  <text x="270" y="215" font-family="Arial" font-size="14" fill="#D946EF">Disculpe</text>
+  <text x="270" y="245" font-family="Arial" font-size="14" fill="#D946EF">¿Cuánto cuesta?</text>
+  <text x="270" y="275" font-family="Arial" font-size="14" fill="#D946EF">¿Dónde está...?</text>
+  
+  <!-- Book title -->
+  <rect x="150" y="70" width="200" height="30" rx="5" fill="#3B82F6"/>
+  <text x="250" y="90" font-family="Arial" font-size="16" font-weight="bold" fill="white" text-anchor="middle">Travel Phrasebook</text>
+  
+  <!-- Flags -->
+  <rect x="80" y="110" width="20" height="15" fill="#f5f5f5"/>
+  <rect x="85" y="110" width="10" height="15" fill="#ff0000"/>
+  <rect x="90" y="110" width="10" height="15" fill="#002654"/>
+  
+  <rect x="400" y="110" width="20" height="15" fill="#AA151B"/>
+  <rect x="400" y="115" width="20" height="5" fill="#F1BF00"/>
+  <rect x="400" y="110" width="20" height="15" stroke="#000" stroke-width="0.5"/>
+  
+  <!-- Decorative elements -->
+  <circle cx="250" y="350" r="20" fill="#3B82F6" opacity="0.2"/>
+  <circle cx="290" y="330" r="15" fill="#D946EF" opacity="0.2"/>
+  <circle cx="210" y="330" r="15" fill="#10B981" opacity="0.2"/>
+  <circle cx="250" y="310" r="10" fill="#F97316" opacity="0.2"/>
+</svg>

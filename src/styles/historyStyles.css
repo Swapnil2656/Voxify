@@ -1,0 +1,41 @@
+/* Custom styles for the translation history section */
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 20px;
+}
+
+.history-item {
+  transition: background-color 0.2s ease;
+}
+
+.history-item:not(:last-child) {
+  border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.dark .history-item:not(:last-child) {
+  border-bottom: 1px solid rgba(55, 65, 81, 0.5);
+}
+
+/* Ensure text doesn't overflow in history items */
+.history-item .text-ellipsis {
+  max-width: 100%;
+  display: inline-block;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}

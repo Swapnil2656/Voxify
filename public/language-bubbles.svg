@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Speech bubbles with different languages -->
+  <g transform="translate(20, 20)">
+    <!-- English bubble -->
+    <rect x="0" y="0" width="100" height="60" rx="10" fill="#3b82f6" />
+    <path d="M20 60 L10 80 L30 60" fill="#3b82f6" />
+    <text x="50" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Hello</text>
+  </g>
+  
+  <g transform="translate(150, 40)">
+    <!-- Spanish bubble -->
+    <rect x="0" y="0" width="100" height="60" rx="10" fill="#d946ef" />
+    <path d="M80 60 L90 80 L70 60" fill="#d946ef" />
+    <text x="50" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Hola</text>
+  </g>
+  
+  <g transform="translate(50, 120)">
+    <!-- French bubble -->
+    <rect x="0" y="0" width="100" height="60" rx="10" fill="#10b981" />
+    <path d="M20 60 L10 80 L30 60" fill="#10b981" />
+    <text x="50" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Bonjour</text>
+  </g>
+  
+  <g transform="translate(200, 150)">
+    <!-- Japanese bubble -->
+    <rect x="0" y="0" width="100" height="60" rx="10" fill="#f97316" />
+    <path d="M80 60 L90 80 L70 60" fill="#f97316" />
+    <text x="50" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">こんにちは</text>
+  </g>
+  
+  <g transform="translate(280, 70)">
+    <!-- Chinese bubble -->
+    <rect x="0" y="0" width="100" height="60" rx="10" fill="#8b5cf6" />
+    <path d="M50 60 L60 80 L40 60" fill="#8b5cf6" />
+    <text x="50" y="35" font-family="Arial" font-size="14" fill="white" text-anchor="middle">你好</text>
+  </g>
+</svg>

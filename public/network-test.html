@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PolyLingo Network Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .info {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PolyLingo Network Connectivity Test</h1>
+    
+    <div class="info">
+        <p>This page tests if your device can properly connect to the PolyLingo application.</p>
+        <p>Current URL: <span id="current-url"></span></p>
+        <p>Server Status: <span id="server-status">Checking...</span></p>
+    </div>
+    
+    <div>
+        <h2>Available Access URLs:</h2>
+        <ul id="urls">
+            <li><a href="http://localhost:3002/" target="_blank">http://localhost:3002/</a> (Local access)</li>
+            <li><a href="http://172.16.0.2:3002/" target="_blank">http://172.16.0.2:3002/</a> (Network access)</li>
+            <li><a href="http://10.73.7.8:3002/" target="_blank">http://10.73.7.8:3002/</a> (Network access)</li>
+        </ul>
+    </div>
+    
+    <div>
+        <h2>Troubleshooting:</h2>
+        <ol>
+            <li>Make sure you're connected to the same network as the server</li>
+            <li>Check if any firewall is blocking the connection</li>
+            <li>Try accessing using different network URLs listed above</li>
+            <li>If using a mobile device, ensure it's connected to the same WiFi network</li>
+        </ol>
+    </div>
+    
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="result"></div>
+    
+    <script>
+        // Display current URL
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        // Function to test connection
+        function testConnection() {
+            const resultDiv = document.getElementById('result');
+            const statusSpan = document.getElementById('server-status');
+            
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+            
+            fetch('/')
+                .then(response => {
+                    if (response.ok) {
+                        statusSpan.className = 'success';
+                        statusSpan.textContent = 'Connected';
+                        resultDiv.innerHTML = '<p class="success">Connection successful! The PolyLingo application is accessible.</p>';
+                    } else {
+                        statusSpan.className = 'error';
+                        statusSpan.textContent = 'Error';
+                        resultDiv.innerHTML = `<p class="error">Connection error: ${response.status} ${response.statusText}</p>`;
+                    }
+                })
+                .catch(error => {
+                    statusSpan.className = 'error';
+                    statusSpan.textContent = 'Failed';
+                    resultDiv.innerHTML = `<p class="error">Connection failed: ${error.message}</p>`;
+                });
+        }
+        
+        // Auto-test on page load
+        window.onload = testConnection;
+    </script>
+</body>
+</html>
