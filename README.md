@@ -1,6 +1,6 @@
-# PolyLingo - Real-Time Language Companion
+# Voxify - Real-Time Language Companion
 
-PolyLingo is a multimodal translation web app that enables real-time multilingual communication by processing both text and audio inputs. It uses Groq's ultra-fast inference engine to power speech-to-text, text translation, and text-to-speech functionality.
+Voxify is a multimodal translation web app that enables real-time multilingual communication by processing both text and audio inputs. It uses Groq's ultra-fast inference engine to power speech-to-text, text translation, and text-to-speech functionality.
 
 ## Features
 
