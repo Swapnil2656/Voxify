@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { FaSpinner, FaGraduationCap, FaBook, FaCheckCircle, FaQuestionCircle } from 'react-icons/fa';
-
-const BACKEND_URL = 'http://localhost:8004';
+import configService from '../services/configService';
 
 // Add a function to handle API errors consistently
 const handleApiError = (error) => {
@@ -76,7 +75,7 @@ const ExerciseGenerator = () => {
 
     try {
       console.log('Sending exercise generation request to backend...');
-      const response = await axios.post(`${BACKEND_URL}/generate-exercises`, {
+      const response = await axios.post(`${configService.getFastApiUrl()}/generate-exercises`, {
         text,
         targetLanguage,
         proficiencyLevel,

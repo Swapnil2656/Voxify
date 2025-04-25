@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { FaSpinner, FaComments, FaSmile, FaUserTie, FaUsers, FaGlobeAmericas } from 'react-icons/fa';
-
-const BACKEND_URL = 'http://localhost:8004';
+import configService from '../services/configService';
 
 // Add a function to handle API errors consistently
 const handleApiError = (error) => {
@@ -122,7 +121,7 @@ const ConversationAnalyzer = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-      const response = await axios.post(`${BACKEND_URL}/analyze-conversation`, {
+      const response = await axios.post(`${configService.getFastApiUrl()}/analyze-conversation`, {
         messages,
         analyzeFor
       }, {

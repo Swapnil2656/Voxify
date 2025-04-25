@@ -580,6 +580,39 @@ app.post('/api/ocr-translate', async (req, res) => {
   }
 });
 
+// Proxy all FastAPI requests
+app.use('/fastapi', async (req, res) => {
+  try {
+    const url = `http://localhost:8004${req.url.replace('/fastapi', '')}`;
+    console.log(`Proxying request to FastAPI: ${url}`);
+
+    const method = req.method.toLowerCase();
+    let response;
+
+    if (method === 'get') {
+      response = await axios.get(url, { params: req.query });
+    } else if (method === 'post') {
+      response = await axios.post(url, req.body);
+    } else if (method === 'put') {
+      response = await axios.put(url, req.body);
+    } else if (method === 'delete') {
+      response = await axios.delete(url);
+    } else {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    console.error('Error proxying to FastAPI:', error.message);
+    if (error.response) {
+      // Forward the error response from the FastAPI backend
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      res.status(500).json({ error: 'Failed to connect to FastAPI service' });
+    }
+  }
+});
+
 // Serve index.html for client-side routing, but exclude API routes
 app.get(/^(?!\/api\/).+/, (req, res) => {
   // Check if dist/index.html exists
