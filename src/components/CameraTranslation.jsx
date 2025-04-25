@@ -1,8 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { motion } from 'framer-motion';
-import groqService from '../services/groqService';
-import simpleOcrService from '../services/simpleOcrService'; // Import our simple OCR service
+import mockCameraTranslationService from '../services/mockCameraTranslationService';
 import languages from '../data/languages';
 import { speakText } from '../utils/speechUtils';
 import {
@@ -159,40 +158,55 @@ const CameraTranslation = ({ sourceLanguage = 'auto', targetLanguage = 'en', onT
         });
       }, 200);
 
-      // Step 2: Perform OCR using our simple OCR service (no callbacks to avoid DataCloneError)
-      console.log('Step 2: Performing OCR...');
+      // Step 2: Perform OCR and translation using our mock service
+      console.log('Step 2: Performing OCR and translation...');
       setProcessingStage('ocr');
 
-      let ocrResult;
       try {
-        // Use our simple OCR service that avoids DataCloneError
-        ocrResult = await simpleOcrService.recognizeText(imageToProcess);
-        console.log('OCR complete, data received:', ocrResult);
+        // Use our mock service that doesn't require server connection
+        const result = await mockCameraTranslationService.recognizeAndTranslate(
+          imageToProcess,
+          sourceLanguage,
+          targetLanguage
+        );
+
+        console.log('OCR and translation complete, data received:', result);
         setOcrProgress(100);
+
+        if (result.success) {
+          // Set the extracted and translated text
+          setExtractedText(result.extractedText);
+          setTranslatedText(result.translatedText);
+          setOcrConfidence(result.confidence || 0);
+
+          // Save to translation history
+          const historyEntry = {
+            id: Date.now(),
+            inputText: result.extractedText,
+            translatedText: result.translatedText,
+            sourceLanguage: sourceLanguage === 'auto' ? 'auto' : sourceLanguage,
+            targetLanguage,
+            timestamp: new Date().toISOString(),
+            type: 'camera'
+          };
+
+          // Add to history in localStorage
+          try {
+            const history = JSON.parse(localStorage.getItem('polyLingo_history') || '[]');
+            history.unshift(historyEntry);
+            localStorage.setItem('polyLingo_history', JSON.stringify(history.slice(0, 50))); // Keep last 50 entries
+          } catch (storageError) {
+            console.error('Failed to save to history:', storageError);
+          }
+        } else {
+          throw new Error(result.error || 'Failed to process image');
+        }
       } catch (ocrError) {
         console.error('OCR error:', ocrError);
         throw new Error(`OCR failed: ${ocrError.message || 'Unknown error'}`);
       } finally {
         // Clean up the progress monitor
         clearInterval(progressMonitor);
-      }
-
-      // Process OCR results
-      if (ocrResult.success && ocrResult.text && ocrResult.text.trim()) {
-        console.log('Text detected in image');
-        const cleanText = ocrResult.text.trim();
-        setExtractedText(cleanText);
-        setOcrConfidence(ocrResult.confidence || 0);
-
-        // Translate the extracted text
-        console.log('Translating extracted text...');
-        setProcessingStage('translation');
-        await translateExtractedText(cleanText);
-
-        console.log('OCR and translation complete');
-      } else {
-        console.log('No text detected in the OCR results');
-        setError(ocrResult.error || 'No text detected in the image. Please try again with a clearer image or different angle.');
       }
     } catch (err) {
       console.error('OCR processing error:', err);
@@ -292,89 +306,8 @@ const CameraTranslation = ({ sourceLanguage = 'auto', targetLanguage = 'en', onT
     }
   };
 
-  // Translate the extracted text using Groq API
-  const translateExtractedText = async (text) => {
-    if (!text) {
-      console.error('No text provided for translation');
-      return;
-    }
-
-    console.log('Starting translation of text:', text.substring(0, 50) + (text.length > 50 ? '...' : ''));
-    console.log('Target language:', targetLanguage);
-
-    try {
-      setIsProcessing(true);
-
-      // Get the target language name
-      const targetLangName = languages.find(l => l.code === targetLanguage)?.name || targetLanguage;
-
-      // Use the server's translation API directly
-      console.log('Calling translation API...');
-
-      const response = await fetch(`http://localhost:5000/api/translate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: text,
-          sourceLanguage: sourceLanguage,
-          targetLanguage: targetLanguage
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Translation API returned status ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Translation API response received:', data);
-
-      if (data.success && (data.translation || data.translated)) {
-        const translatedText = data.translation || data.translated;
-        console.log('Translation successful');
-
-        setTranslatedText(translatedText);
-
-        // Save to translation history
-        const historyEntry = {
-          id: Date.now(),
-          inputText: text,
-          translatedText: translatedText,
-          sourceLanguage: sourceLanguage === 'auto' ? 'auto' : sourceLanguage,
-          targetLanguage,
-          timestamp: new Date().toISOString(),
-          type: 'camera'
-        };
-
-        // Add to history in localStorage
-        try {
-          const history = JSON.parse(localStorage.getItem('polyLingo_history') || '[]');
-          history.unshift(historyEntry);
-          localStorage.setItem('polyLingo_history', JSON.stringify(history.slice(0, 50))); // Keep last 50 entries
-        } catch (storageError) {
-          console.error('Failed to save to history:', storageError);
-        }
-      } else {
-        console.error('Translation API returned error:', data.error || 'Unknown error');
-        setError(data.error || 'Translation failed. Please try again.');
-      }
-    } catch (err) {
-      console.error('Translation error:', err);
-
-      // Provide more helpful error messages
-      if (err.message.includes('timed out')) {
-        setError('Translation request timed out. Please try again later.');
-      } else if (err.message.includes('network') || err.message.includes('connection')) {
-        setError('Network error during translation. Please check your internet connection and try again.');
-      } else {
-        setError(`Translation failed: ${err.message || 'Unknown error'}`);
-      }
-    } finally {
-      setIsProcessing(false);
-      console.log('Translation process complete');
-    }
-  };
+  // We're now handling translation directly in the processImage function
+  // using our mockCameraTranslationService
 
   // Reset the camera and state
   const resetCamera = () => {
@@ -393,7 +326,24 @@ const CameraTranslation = ({ sourceLanguage = 'auto', targetLanguage = 'en', onT
         <div className="max-w-xl mx-auto">
           {/* Camera/Image Column - Second box removed */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
-            {/* Language selection box removed */}
+            {/* Language selection */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Target Language:
+              </div>
+              <select
+                value={targetLanguage}
+                onChange={(e) => console.log("Language selection is handled by parent component")}
+                className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled
+              >
+                {languages.map(lang => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 aspect-video mb-4">
               {cameraActive ? (

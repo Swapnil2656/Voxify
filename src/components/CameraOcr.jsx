@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import Webcam from 'react-webcam';
-import Tesseract from 'tesseract.js';
 import { motion } from 'framer-motion';
 import languages from '../data/languages';
+import mockCameraTranslationService from '../services/mockCameraTranslationService';
 
 function CameraOcr({ sourceLanguage = 'auto', targetLanguage = 'en', onTranslationComplete }) {
   // States for image and text
@@ -52,8 +52,8 @@ function CameraOcr({ sourceLanguage = 'auto', targetLanguage = 'en', onTranslati
       console.log('Preprocessing image...');
       setProcessingStage('preprocessing');
 
-      // Step 2: Perform OCR
-      console.log('Performing OCR...');
+      // Step 2: Perform OCR and translation using our mock service
+      console.log('Performing OCR and translation...');
       setProcessingStage('ocr');
 
       // Set up a manual progress indicator
@@ -65,28 +65,33 @@ function CameraOcr({ sourceLanguage = 'auto', targetLanguage = 'en', onTranslati
       }, 200);
 
       try {
-        // Use Tesseract.recognize with NO logger to avoid DataCloneError
-        console.log('Starting Tesseract OCR...');
-        const result = await Tesseract.recognize(
+        // Use our mock service that doesn't require server connection
+        const result = await mockCameraTranslationService.recognizeAndTranslate(
           capturedImage,
-          'eng' // Use English for now
-          // NO logger or callbacks here - this avoids DataCloneError
+          sourceLanguage,
+          targetLanguage
         );
 
-        console.log('OCR complete');
+        console.log('OCR and translation complete, data received:', result);
         setProgress(100);
 
-        // Extract and set the text
-        if (result.data && result.data.text) {
-          const cleanText = result.data.text.trim();
-          setExtractedText(cleanText);
+        if (result.success) {
+          // Set the extracted and translated text
+          setExtractedText(result.extractedText);
+          setTranslatedText(result.translatedText);
 
-          // Step 3: Translate the text
-          console.log('Translating text...');
-          setProcessingStage('translation');
-          await translateText(cleanText);
+          // Notify parent component if callback provided
+          if (onTranslationComplete) {
+            onTranslationComplete({
+              sourceText: result.extractedText,
+              translatedText: result.translatedText,
+              sourceLanguage,
+              targetLanguage,
+              image: capturedImage
+            });
+          }
         } else {
-          setError('No text detected in the image. Please try again with a clearer image.');
+          throw new Error(result.error || 'Failed to process image');
         }
       } catch (ocrError) {
         console.error('OCR error:', ocrError);
@@ -103,50 +108,8 @@ function CameraOcr({ sourceLanguage = 'auto', targetLanguage = 'en', onTranslati
     }
   };
 
-  // Translate the extracted text
-  const translateText = async (text) => {
-    try {
-      // For this example, we'll use a simple API call to the server
-      const response = await fetch('http://localhost:5000/api/translate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text,
-          sourceLanguage,
-          targetLanguage
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Translation API returned status ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success && (data.translation || data.translated)) {
-        const translatedText = data.translation || data.translated;
-        setTranslatedText(translatedText);
-
-        // Notify parent component if callback provided
-        if (onTranslationComplete) {
-          onTranslationComplete({
-            sourceText: text,
-            translatedText,
-            sourceLanguage,
-            targetLanguage,
-            image: capturedImage
-          });
-        }
-      } else {
-        throw new Error(data.error || 'Translation failed');
-      }
-    } catch (error) {
-      console.error('Translation error:', error);
-      setError(`Translation failed: ${error.message || 'Unknown error'}`);
-    }
-  };
+  // We're now handling translation directly in the processImage function
+  // using our mockCameraTranslationService
 
   // Reset the camera
   const resetCamera = () => {
@@ -198,7 +161,24 @@ function CameraOcr({ sourceLanguage = 'auto', targetLanguage = 'en', onTranslati
         <div className="max-w-xl mx-auto">
           {/* Camera/Image Column - Second box removed */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4">
-            {/* Language selection box removed */}
+            {/* Language selection */}
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Target Language:
+              </div>
+              <select
+                value={targetLanguage}
+                onChange={(e) => console.log("Language selection is handled by parent component")}
+                className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled
+              >
+                {languages.map(lang => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.flag} {lang.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 aspect-video mb-4">
               {!capturedImage ? (
