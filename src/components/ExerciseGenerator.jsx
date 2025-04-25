@@ -115,6 +115,8 @@ const ExerciseGenerator = () => {
     }
   };
 
+
+
   const renderExercises = () => {
     if (!exercises) return null;
 
@@ -505,7 +507,8 @@ const ExerciseGenerator = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <form onSubmit={handleSubmit}>
+
+                <form onSubmit={handleSubmit}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Text for Exercises
@@ -582,20 +585,22 @@ const ExerciseGenerator = () => {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center">
-                      <FaSpinner className="animate-spin mr-2" />
-                      Generating Exercises...
-                    </span>
-                  ) : (
-                    'Generate Exercises'
-                  )}
-                </button>
+                <div className="mt-4">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-2 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center">
+                        <FaSpinner className="animate-spin mr-2" />
+                        Generating...
+                      </span>
+                    ) : (
+                      'Generate Exercises'
+                    )}
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>
@@ -619,9 +624,12 @@ const ExerciseGenerator = () => {
                 </div>
               ) : exercises ? (
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                    Practice Exercises
-                  </h3>
+                  <div className="mb-4">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                      <FaGraduationCap className="inline mr-2 text-blue-600 dark:text-blue-400" />
+                      Practice Exercises
+                    </h3>
+                  </div>
                   {renderExercises()}
                 </div>
               ) : (
