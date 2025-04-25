@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
 import { FaSpinner, FaGraduationCap, FaBook, FaCheckCircle, FaQuestionCircle } from 'react-icons/fa';
-import configService from '../services/configService';
+import mockExerciseService from '../services/mockExerciseService';
 
 // Add a function to handle API errors consistently
 const handleApiError = (error) => {
@@ -57,7 +56,7 @@ const ExerciseGenerator = () => {
     { value: 'comprehension', label: 'Comprehension', icon: <FaQuestionCircle /> },
   ];
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!text.trim()) {
@@ -69,48 +68,29 @@ const ExerciseGenerator = () => {
     setError(null);
     setExercises(null);
 
-    // Create an AbortController for timeout handling
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-
     try {
-      console.log('Sending exercise generation request to backend...');
-      const response = await axios.post(`${configService.getFastApiUrl()}/generate-exercises`, {
-        text,
-        targetLanguage,
-        proficiencyLevel,
-        exerciseType
-      }, {
-        timeout: 15000, // 15 second timeout for AI processing
-        signal: controller.signal
-      });
+      console.log('Generating exercises locally...');
 
-      clearTimeout(timeoutId);
-      console.log('Received response:', response.data);
+      // Simulate a delay to show loading state
+      setTimeout(() => {
+        // Generate exercises using the mock service
+        const generatedExercises = mockExerciseService.generateExercises({
+          text,
+          targetLanguage,
+          proficiencyLevel,
+          exerciseType
+        });
 
-      if (response.data.success) {
-        if (response.data.exercises && Object.keys(response.data.exercises).length > 0) {
-          setExercises(response.data.exercises);
-        } else if (response.data.exercises && response.data.exercises.raw) {
-          // Handle raw text response
-          setExercises({
-            parsed: false,
-            raw: response.data.exercises.raw,
-            note: 'The AI returned a response in an unexpected format. Here is the raw content:'
-          });
-        } else {
-          setError('Received empty response from the server');
-        }
-      } else {
-        setError('Failed to generate exercises');
-      }
+        console.log('Generated exercises:', generatedExercises);
+
+        // Set the exercises
+        setExercises(generatedExercises);
+        setIsLoading(false);
+      }, 1000); // 1 second delay to simulate processing
+
     } catch (err) {
-      clearTimeout(timeoutId);
       console.error('Error generating exercises:', err);
-
-      // Use the common error handling function
-      setError(handleApiError(err));
-    } finally {
+      setError('Failed to generate exercises: ' + err.message);
       setIsLoading(false);
     }
   };
