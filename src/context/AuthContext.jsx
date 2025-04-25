@@ -87,8 +87,8 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
 
       // Store session in localStorage as a backup
-      localStorage.setItem('polylingo-session', JSON.stringify(session));
-      localStorage.setItem('polylingo-user', JSON.stringify(userData));
+      localStorage.setItem('voxify-session', JSON.stringify(session));
+      localStorage.setItem('voxify-user', JSON.stringify(userData));
 
       return userData;
     } catch (error) {
@@ -119,8 +119,8 @@ export const AuthProvider = ({ children }) => {
         setUser(newUser);
 
         // Store session in localStorage
-        localStorage.setItem('polylingo-session', JSON.stringify(session));
-        localStorage.setItem('polylingo-user', JSON.stringify(newUser));
+        localStorage.setItem('voxify-session', JSON.stringify(session));
+        localStorage.setItem('voxify-user', JSON.stringify(newUser));
       } else {
         console.log('No session returned from signUp (email confirmation required)');
       }
@@ -142,8 +142,8 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
 
       // Clear localStorage
-      localStorage.removeItem('polylingo-session');
-      localStorage.removeItem('polylingo-user');
+      localStorage.removeItem('voxify-session');
+      localStorage.removeItem('voxify-user');
 
       return { success: true };
     } catch (error) {
@@ -152,8 +152,8 @@ export const AuthProvider = ({ children }) => {
       // Even if the API call fails, clear local state and storage
       setToken(null);
       setUser(null);
-      localStorage.removeItem('polylingo-session');
-      localStorage.removeItem('polylingo-user');
+      localStorage.removeItem('voxify-session');
+      localStorage.removeItem('voxify-user');
 
       throw new Error(error.message || 'Failed to log out');
     }
@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }) => {
 
     // If not, check localStorage as a fallback
     try {
-      const sessionStr = localStorage.getItem('polylingo-session');
+      const sessionStr = localStorage.getItem('voxify-session');
       if (sessionStr) {
         const session = JSON.parse(sessionStr);
         if (session && session.access_token) {
@@ -180,7 +180,7 @@ export const AuthProvider = ({ children }) => {
             console.log('Found token in localStorage but not in state, updating state');
             setToken(session.access_token);
 
-            const userStr = localStorage.getItem('polylingo-user');
+            const userStr = localStorage.getItem('voxify-user');
             if (userStr) {
               const userData = JSON.parse(userStr);
               setUser(userData);
