@@ -8,9 +8,13 @@ const getApiUrl = () => {
   const isProduction = window.location.hostname !== 'localhost' &&
                        window.location.hostname !== '127.0.0.1';
 
+  // Get the base URL of the current page
+  const baseUrl = window.location.origin;
+
   if (isProduction) {
-    // In production, use relative URLs that will work on any domain
-    return '/api';
+    // In production, use the full URL to the API
+    // This ensures we're connecting to the right server regardless of deployment setup
+    return `${baseUrl}/api`;
   } else {
     // In development, use the local server
     return 'http://localhost:5000/api';
@@ -21,9 +25,12 @@ const getFastApiUrl = () => {
   const isProduction = window.location.hostname !== 'localhost' &&
                        window.location.hostname !== '127.0.0.1';
 
+  // Get the base URL of the current page
+  const baseUrl = window.location.origin;
+
   if (isProduction) {
-    // In production, FastAPI might be on the same server or a different one
-    return '/fastapi'; // This assumes you've set up a proxy in your server
+    // In production, use the full URL to the FastAPI
+    return `${baseUrl}/fastapi`;
   } else {
     return 'http://localhost:8004';
   }
@@ -34,6 +41,7 @@ const FASTAPI_URL = getFastApiUrl();
 
 // Log the API URLs for debugging
 console.log('Environment:', window.location.hostname !== 'localhost' ? 'Production' : 'Development');
+console.log('Current origin:', window.location.origin);
 console.log('Translation API URL:', API_URL);
 console.log('FastAPI URL:', FASTAPI_URL);
 

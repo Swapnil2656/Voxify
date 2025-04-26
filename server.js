@@ -22,7 +22,26 @@ console.log('Node environment:', process.env.NODE_ENV || 'development');
 console.log('Using Groq API key:', process.env.GROQ_API_KEY ? 'Yes (configured)' : 'No (missing)');
 
 // Middleware
-app.use(cors());
+// Enhanced CORS configuration for deployment
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if(!origin) return callback(null, true);
+
+    // Allow all origins in development and production
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - Origin: ${req.headers.origin || 'No origin'}`);
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -325,7 +344,15 @@ app.post('/api/translate-text', async (req, res) => {
 
     // Try to forward the request to the FastAPI backend
     try {
-      const fastApiResponse = await axios.post('http://localhost:8004/translate-text', {
+      // Determine the FastAPI URL based on environment
+      const isProduction = process.env.NODE_ENV === 'production';
+      const fastApiUrl = isProduction ?
+        `${req.protocol}://${req.get('host')}/fastapi/translate-text` :
+        'http://localhost:8004/translate-text';
+
+      console.log(`Using FastAPI URL: ${fastApiUrl}`);
+
+      const fastApiResponse = await axios.post(fastApiUrl, {
         text,
         sourceLanguage: sourceLanguage || 'auto',
         targetLanguage,
@@ -339,7 +366,14 @@ app.post('/api/translate-text', async (req, res) => {
       console.warn('FastAPI request failed, falling back to direct translation:', fastApiError.message);
 
       // Fall back to our direct translation endpoint
-      const translationResponse = await axios.post('http://localhost:' + PORT + '/api/translate', {
+      const isProduction = process.env.NODE_ENV === 'production';
+      const translationUrl = isProduction ?
+        `${req.protocol}://${req.get('host')}/api/translate` :
+        `http://localhost:${PORT}/api/translate`;
+
+      console.log(`Using fallback translation URL: ${translationUrl}`);
+
+      const translationResponse = await axios.post(translationUrl, {
         text,
         sourceLanguage,
         targetLanguage
