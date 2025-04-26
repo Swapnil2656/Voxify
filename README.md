@@ -70,7 +70,8 @@ we chose to tackle language barriers because it's a universal challenge that aff
 
 The Groq track presented the perfect opportunity to leverage cutting-edge AI for this purpose. Groq's ultra-fast inference capabilities are ideal for translation tasks that require both speed and accuracy, enabling real-time communication that feels natural rather than disjointed.
 
-Key challenges you addressed
+Key challenges we addressed
+
 Multi-modal translation integration: Creating a seamless experience across text, voice, and camera-based translation required careful architecture and UX design. Each modality presented unique technical challenges, from handling audio processing for voice to implementing OCR for camera translation.
 
 Reliability and offline functionality: Ensuring the application works reliably even with unstable internet connections was critical for real-world use. we implemented a robust fallback system that provides translations even when APwe connections fail.
