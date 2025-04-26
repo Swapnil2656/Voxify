@@ -2,11 +2,38 @@ import axios from 'axios';
 import { translateWithHindi } from './hindiTranslationService';
 import offlineTranslationService from './offlineTranslationService';
 
-// API URLs for the translation servers
-const API_URL = 'http://localhost:5000/api';
-const FASTAPI_URL = 'http://localhost:8004';
+// API URLs for the translation servers - dynamically determine based on environment
+const getApiUrl = () => {
+  // Check if we're in a production environment (deployed)
+  const isProduction = window.location.hostname !== 'localhost' &&
+                       window.location.hostname !== '127.0.0.1';
+
+  if (isProduction) {
+    // In production, use relative URLs that will work on any domain
+    return '/api';
+  } else {
+    // In development, use the local server
+    return 'http://localhost:5000/api';
+  }
+};
+
+const getFastApiUrl = () => {
+  const isProduction = window.location.hostname !== 'localhost' &&
+                       window.location.hostname !== '127.0.0.1';
+
+  if (isProduction) {
+    // In production, FastAPI might be on the same server or a different one
+    return '/fastapi'; // This assumes you've set up a proxy in your server
+  } else {
+    return 'http://localhost:8004';
+  }
+};
+
+const API_URL = getApiUrl();
+const FASTAPI_URL = getFastApiUrl();
 
 // Log the API URLs for debugging
+console.log('Environment:', window.location.hostname !== 'localhost' ? 'Production' : 'Development');
 console.log('Translation API URL:', API_URL);
 console.log('FastAPI URL:', FASTAPI_URL);
 
@@ -526,37 +553,45 @@ const translationService = {
 
       // First try to use the Groq API through our server
       try {
-        // Check if server is available
-        if (!isServerAvailable) {
-          await checkServerAvailability();
-        }
+        console.log('Attempting translation with Groq API via server');
 
-        // If server is available, try to use it with Groq API
-        if (isServerAvailable) {
-          console.log('Attempting translation with Groq API via server');
-          try {
-            const response = await axios.post(`${API_URL}/translate`, {
-              text,
-              sourceLanguage,
-              targetLanguage
-            }, {
-              timeout: 10000 // 10 second timeout
-            });
+        // Always try to use the server first, regardless of previous availability
+        try {
+          console.log(`Sending translation request to ${API_URL}/translate`);
+          const response = await axios.post(`${API_URL}/translate`, {
+            text,
+            sourceLanguage,
+            targetLanguage
+          }, {
+            timeout: 15000 // 15 second timeout
+          });
 
-            console.log('Server translation response:', response.data);
+          console.log('Server translation response received:', response.data);
 
-            if (response.data && (response.data.translation || response.data.translated)) {
-              const translatedText = response.data.translation || response.data.translated;
-              console.log('Successfully translated with Groq API:', translatedText);
-              return translatedText;
+          // Check if we got a valid translation
+          if (response.data && (response.data.translation || response.data.translated)) {
+            const translatedText = response.data.translation || response.data.translated;
+            console.log('Successfully translated with Groq API:', translatedText);
+
+            // If it's a fallback translation from the server, log it
+            if (response.data.fallback) {
+              console.log('Server used fallback translation mechanism');
             }
-          } catch (serverError) {
-            console.warn('Server translation with Groq API failed:', serverError.message);
+
+            return translatedText;
+          } else {
+            console.warn('Unexpected response format from server:', response.data);
             // Continue to fallback mechanisms
           }
+        } catch (serverError) {
+          console.warn('Server translation with Groq API failed:', serverError.message);
+          if (serverError.response) {
+            console.warn('Server error response:', serverError.response.data);
+          }
+          // Continue to fallback mechanisms
         }
       } catch (error) {
-        console.warn('Error checking server availability:', error.message);
+        console.warn('Error in translation process:', error.message);
         // Continue to fallback mechanisms
       }
 

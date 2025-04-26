@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3002",
     "build": "vite build",
+    "build:prod": "vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview --host 0.0.0.0 --port 3002",
     "server": "node server.js",
-    "start": "node start.js"
+    "server:prod": "NODE_ENV=production node server.js",
+    "start": "node server.js",
+    "deploy": "npm run build:prod && npm run server:prod"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",

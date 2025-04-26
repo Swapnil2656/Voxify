@@ -15,7 +15,11 @@ const __dirname = dirname(__filename);
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
+
+// Log environment information
+console.log('Node environment:', process.env.NODE_ENV || 'development');
+console.log('Using Groq API key:', process.env.GROQ_API_KEY ? 'Yes (configured)' : 'No (missing)');
 
 // Middleware
 app.use(cors());
@@ -47,6 +51,7 @@ app.post('/api/translate', async (req, res) => {
     }
 
     console.log(`Translating: "${text}" from ${sourceLanguage || 'auto'} to ${targetLanguage}`);
+    console.log('Request received at /api/translate endpoint');
 
     // Use Groq API for translation
     const groqApiKey = process.env.GROQ_API_KEY;
@@ -173,21 +178,45 @@ app.post('/api/translate', async (req, res) => {
       `Translate the following ${sourceLanguageName} text to ${targetLanguageName}:\n\n"${text}"`;
 
     // Call Groq API
-    const groqResponse = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-      model: "llama3-8b-8192",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.3,
-      max_tokens: 1000,
-      top_p: 0.9
-    }, {
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json'
+    console.log('Sending request to Groq API with prompt:', userPrompt);
+    console.log('Using Groq API key:', groqApiKey.substring(0, 5) + '...');
+
+    let groqResponse;
+    try {
+      groqResponse = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+        model: "llama3-8b-8192",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000,
+        top_p: 0.9
+      }, {
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000 // 15 second timeout
+      });
+
+      console.log('Groq API response received successfully');
+    } catch (groqError) {
+      console.error('Error calling Groq API:', groqError.message);
+      if (groqError.response) {
+        console.error('Groq API error response:', groqError.response.data);
       }
-    });
+
+      // Return a fallback translation
+      return res.json({
+        translation: `[FALLBACK] ${text}`,
+        translated: `[FALLBACK] ${text}`,
+        sourceLanguage: sourceLanguage || 'auto',
+        targetLanguage,
+        success: true,
+        fallback: true
+      });
+    }
 
     // Extract the translation from Groq's response
     let translation = groqResponse.data.choices[0].message.content.trim();
