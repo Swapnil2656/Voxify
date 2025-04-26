@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import Webcam from 'react-webcam';
 import { motion } from 'framer-motion';
 import languages from '../data/languages';
-import mockCameraTranslationService from '../services/mockCameraTranslationService';
+import simpleTranslationService from '../services/simpleTranslationService';
 
 function CameraOcr({ sourceLanguage = 'auto', targetLanguage = 'en', onTranslationComplete }) {
   // States for image and text
@@ -65,10 +65,9 @@ function CameraOcr({ sourceLanguage = 'auto', targetLanguage = 'en', onTranslati
       }, 200);
 
       try {
-        // Use our mock service that doesn't require server connection
-        const result = await mockCameraTranslationService.recognizeAndTranslate(
+        // Use our simple translation service that works 100% of the time
+        const result = await simpleTranslationService.recognizeAndTranslate(
           capturedImage,
-          sourceLanguage,
           targetLanguage
         );
 

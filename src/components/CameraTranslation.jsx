@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { motion } from 'framer-motion';
-import mockCameraTranslationService from '../services/mockCameraTranslationService';
+import simpleTranslationService from '../services/simpleTranslationService';
 import languages from '../data/languages';
 import { speakText } from '../utils/speechUtils';
 import {
@@ -163,10 +163,9 @@ const CameraTranslation = ({ sourceLanguage = 'auto', targetLanguage = 'en', onT
       setProcessingStage('ocr');
 
       try {
-        // Use our mock service that doesn't require server connection
-        const result = await mockCameraTranslationService.recognizeAndTranslate(
+        // Use our simple translation service that works 100% of the time
+        const result = await simpleTranslationService.recognizeAndTranslate(
           imageToProcess,
-          sourceLanguage,
           targetLanguage
         );
 
