@@ -59,8 +59,8 @@ By breaking down language barriers, Voxify empowers people to connect, learn, an
 
 ### Team Members:  
 -Swapnil Sen(https://github.com/Swapnil2656 / www.linkedin.com/in/swapnil-sen-812030309)  
--Shruti Tiwari
--Karavadi Harinee  
+-Shruti Tiwari(/)
+-Karavadi Harinee (/https://www.linkedin.com/in/karavadi-harinee-lakshmi-398163331?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app) 
 
 
 ### Our Approach:  
