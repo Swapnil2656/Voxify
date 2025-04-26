@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import languages from '../data/languages';
 import translationService from '../services/translationService';
+import deploymentTranslationService from '../services/deploymentTranslationService';
 import offlineTranslationService from '../services/offlineTranslationService';
 
 // Get language name from code
@@ -47,8 +48,31 @@ const DirectTextTranslation = ({ text, sourceLanguage, targetLanguage, onTransla
     setError(null);
 
     try {
-      // Use the translation service
-      const translatedText = await translationService.translateText(text, sourceLanguage, targetLanguage);
+      let translatedText;
+
+      // Check if we're in a production environment (deployed)
+      const isProduction = window.location.hostname !== 'localhost' &&
+                           window.location.hostname !== '127.0.0.1';
+
+      console.log(`Environment: ${isProduction ? 'Production' : 'Development'}`);
+
+      if (isProduction) {
+        // In production, use the deployment translation service that works 100% of the time
+        console.log('Using deployment translation service');
+        translatedText = await deploymentTranslationService.translateText(text, sourceLanguage, targetLanguage);
+      } else {
+        // In development, try to use the regular translation service
+        console.log('Using regular translation service');
+        try {
+          translatedText = await translationService.translateText(text, sourceLanguage, targetLanguage);
+        } catch (regularError) {
+          console.error('Regular translation service failed:', regularError);
+          // Fall back to deployment service if regular service fails
+          console.log('Falling back to deployment translation service');
+          translatedText = await deploymentTranslationService.translateText(text, sourceLanguage, targetLanguage);
+        }
+      }
+
       setTranslation(translatedText);
 
       // Notify parent component

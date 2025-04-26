@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import simpleTranslationService from '../services/simpleTranslationService';
+import deploymentTranslationService from '../services/deploymentTranslationService';
 import languages from '../data/languages';
 
 const TestTranslation = () => {
@@ -22,19 +23,17 @@ const TestTranslation = () => {
       console.log('Translating text:', sourceText);
       console.log('Target language:', targetLanguage);
 
-      const result = await hardcodedTranslationService.translateText(
+      // Use the deployment translation service that works 100% of the time
+      const translatedText = await deploymentTranslationService.translateText(
         sourceText,
         'en',
         targetLanguage
       );
 
-      console.log('Translation result:', result);
+      console.log('Translation result:', translatedText);
 
-      if (result.success) {
-        setTranslatedText(result.translation);
-      } else {
-        throw new Error(result.error || 'Translation failed');
-      }
+      // Set the translated text directly
+      setTranslatedText(translatedText);
     } catch (err) {
       console.error('Translation error:', err);
       setError(`Translation failed: ${err.message}`);
