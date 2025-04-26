@@ -48,42 +48,96 @@ const DirectTextTranslation = ({ text, sourceLanguage, targetLanguage, onTransla
     setError(null);
 
     try {
-      let translatedText;
+      // DIRECT IMPLEMENTATION: Call Groq API directly from the frontend
+      // This ensures it works in all environments including Vercel deployment
+      console.log('Translating text directly with Groq API');
 
-      // Check if we're in a production environment (deployed)
-      const isProduction = window.location.hostname !== 'localhost' &&
-                           window.location.hostname !== '127.0.0.1';
+      // Get language name from code
+      const languageNames = {
+        'en': 'English', 'es': 'Spanish', 'fr': 'French', 'de': 'German',
+        'it': 'Italian', 'pt': 'Portuguese', 'ru': 'Russian', 'zh': 'Chinese',
+        'ja': 'Japanese', 'ko': 'Korean', 'ar': 'Arabic', 'hi': 'Hindi'
+      };
 
-      console.log(`Environment: ${isProduction ? 'Production' : 'Development'}`);
+      const targetLanguageName = languageNames[targetLanguage] || targetLanguage;
+      const sourceLanguageName = sourceLanguage ? (languageNames[sourceLanguage] || sourceLanguage) : 'auto';
 
-      if (isProduction) {
-        // In production, use the deployment translation service that works 100% of the time
-        console.log('Using deployment translation service');
-        translatedText = await deploymentTranslationService.translateText(text, sourceLanguage, targetLanguage);
-      } else {
-        // In development, try to use the regular translation service
-        console.log('Using regular translation service');
-        try {
-          translatedText = await translationService.translateText(text, sourceLanguage, targetLanguage);
-        } catch (regularError) {
-          console.error('Regular translation service failed:', regularError);
-          // Fall back to deployment service if regular service fails
-          console.log('Falling back to deployment translation service');
-          translatedText = await deploymentTranslationService.translateText(text, sourceLanguage, targetLanguage);
-        }
-      }
+      // Prepare the prompt for Groq
+      const systemPrompt = "You are a professional multilingual translator for a travel and communication app. Translate text precisely and naturally.";
+      const userPrompt = sourceLanguage === 'auto' ?
+        `Translate the following text to ${targetLanguageName}:\n\n"${text}"` :
+        `Translate the following ${sourceLanguageName} text to ${targetLanguageName}:\n\n"${text}"`;
 
-      setTranslation(translatedText);
+      // IMPORTANT: Hardcoded Groq API key for the hackathon project
+      const groqApiKey = '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';
 
-      // Notify parent component
-      if (onTranslate) {
-        onTranslate({
-          sourceText: text,
-          translatedText,
-          sourceLanguage,
-          targetLanguage,
-          isOffline: translatedText.startsWith('[OFFLINE]')
+      try {
+        // First attempt: Direct API call to Groq
+        console.log('Attempting direct API call to Groq');
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: "llama3-8b-8192",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt }
+            ],
+            temperature: 0.3,
+            max_tokens: 1000,
+            top_p: 0.9
+          })
         });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        let translatedText = data.choices[0].message.content.trim();
+
+        // Remove quotes if present
+        if ((translatedText.startsWith('"') && translatedText.endsWith('"')) ||
+            (translatedText.startsWith("'") && translatedText.endsWith("'"))) {
+          translatedText = translatedText.substring(1, translatedText.length - 1);
+        }
+
+        console.log('Successfully translated with Groq API:', translatedText);
+
+        setTranslation(translatedText);
+
+        // Notify parent component
+        if (onTranslate) {
+          onTranslate({
+            sourceText: text,
+            translatedText,
+            sourceLanguage,
+            targetLanguage,
+            isOffline: false
+          });
+        }
+      } catch (directApiError) {
+        console.error('Direct Groq API call failed:', directApiError.message);
+
+        // Fallback to deployment translation service
+        console.log('Falling back to deployment translation service');
+        const fallbackText = await deploymentTranslationService.translateText(text, sourceLanguage, targetLanguage);
+
+        setTranslation(fallbackText);
+
+        // Notify parent component
+        if (onTranslate) {
+          onTranslate({
+            sourceText: text,
+            translatedText: fallbackText,
+            sourceLanguage,
+            targetLanguage,
+            isOffline: true
+          });
+        }
       }
 
       setIsTranslating(false);
