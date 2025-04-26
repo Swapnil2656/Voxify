@@ -1,13 +1,119 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { speakText, fallbackTextToSpeech } from '../utils/speechUtils';
 
 const TranslationResult = ({
   text,
   isLoading,
   error,
   placeholder = 'Translation will appear here...',
-  className = ''
+  className = '',
+  onPlayAudio
 }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentWord, setCurrentWord] = useState(-1);
+  const [words, setWords] = useState([]);
+
+  // Split text into words when it changes
+  useEffect(() => {
+    if (text) {
+      // Clean the text by removing any offline prefix
+      const cleanText = text.startsWith('[OFFLINE]')
+        ? text.replace('[OFFLINE] ', '')
+        : text;
+
+      // Remove any language code prefix like [ES]
+      const textWithoutLangCode = cleanText.replace(/\[[A-Z]{2}\]\s*/, '');
+
+      // Split the text into words
+      const wordArray = textWithoutLangCode.split(/\s+/).filter(word => word.length > 0);
+      setWords(wordArray);
+      setCurrentWord(-1);
+    } else {
+      setWords([]);
+      setCurrentWord(-1);
+    }
+  }, [text]);
+
+  // Function to simulate word-by-word highlighting
+  const simulateWordHighlighting = () => {
+    if (words.length === 0) return;
+
+    setCurrentWord(0);
+
+    // Calculate average word duration based on total words and estimated speech duration
+    const avgWordDuration = Math.max(300, 5000 / words.length); // Minimum 300ms per word
+
+    // Create a sequence of timeouts to highlight each word
+    words.forEach((word, index) => {
+      if (index === 0) return; // Skip first word as it's already highlighted
+
+      setTimeout(() => {
+        setCurrentWord(index);
+      }, index * avgWordDuration);
+    });
+
+    // Reset highlighting after all words have been spoken
+    setTimeout(() => {
+      setCurrentWord(-1);
+      setIsPlaying(false);
+    }, words.length * avgWordDuration + 500);
+  };
+
+  // Direct audio playback function that works in all environments
+  const handlePlayAudio = () => {
+    if (!text || isPlaying) return;
+
+    setIsPlaying(true);
+    console.log('TranslationResult: Playing audio for text:', text);
+
+    try {
+      // Start word highlighting simulation
+      simulateWordHighlighting();
+
+      // If parent component provided an onPlayAudio function, use it
+      if (onPlayAudio) {
+        onPlayAudio();
+        return;
+      }
+
+      // Otherwise, use our own implementation
+      // Remove any [OFFLINE] prefix if present
+      const cleanText = text.startsWith('[OFFLINE]')
+        ? text.replace('[OFFLINE] ', '')
+        : text;
+
+      // Extract language code from text if available, or default to English
+      const languageMatch = text.match(/\[([A-Z]{2})\]/);
+      const languageCode = languageMatch ? languageMatch[1].toLowerCase() : 'en';
+
+      console.log(`Playing audio in language: ${languageCode}`);
+
+      // Try to use the browser's speech synthesis
+      const speechResult = speakText(cleanText, languageCode, () => {
+        console.log('Speech synthesis completed');
+        // Note: We don't reset isPlaying here because the word highlighting will do it
+      });
+
+      // If speech synthesis fails, use fallback
+      if (!speechResult) {
+        console.log('Speech synthesis failed, using fallback');
+        fallbackTextToSpeech(cleanText, languageCode);
+        // We still let the word highlighting control the isPlaying state
+      }
+    } catch (error) {
+      console.error('Audio playback error:', error);
+      setIsPlaying(false);
+      setCurrentWord(-1);
+
+      // Try fallback as last resort
+      try {
+        fallbackTextToSpeech(text, 'en');
+      } catch (fallbackErr) {
+        console.error('Even fallback failed:', fallbackErr);
+      }
+    }
+  };
   return (
     <div className={`relative h-full ${className}`}>
       <AnimatePresence mode="wait">
@@ -99,6 +205,35 @@ const TranslationResult = ({
             className="h-full"
           >
             <div className="h-full overflow-auto p-6 bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-850 rounded-xl border border-gray-200 dark:border-gray-700 shadow-md hover:shadow-lg transition-shadow duration-300 custom-scrollbar">
+              {/* Play button at the top */}
+              <div className="mb-4 flex justify-end">
+                <motion.button
+                  onClick={handlePlayAudio}
+                  disabled={isPlaying}
+                  className={`flex items-center px-4 py-2 rounded-lg ${isPlaying ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/40'} transition-colors duration-200`}
+                  whileHover={{ scale: isPlaying ? 1 : 1.05 }}
+                  whileTap={{ scale: isPlaying ? 1 : 0.95 }}
+                >
+                  {isPlaying ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Playing...
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 mr-2">
+                        <path d="M10 3.75a.75.75 0 00-1.264-.546L4.703 7H3.167a.75.75 0 00-.7.477A6.98 6.98 0 002 10a6.98 6.98 0 00.467 2.523.75.75 0 00.7.477h1.537l4.033 3.796A.75.75 0 0010 16.25V3.75zM15.95 5.05a.75.75 0 00-1.06 1.061 5.5 5.5 0 010 7.778.75.75 0 001.06 1.06a7 7 0 000-9.899z" />
+                        <path d="M13.829 7.172a.75.75 0 00-1.061 1.06 2.5 2.5 0 010 3.536.75.75 0 001.06 1.06a4 4 0 000-5.656z" />
+                      </svg>
+                      Listen
+                    </>
+                  )}
+                </motion.button>
+              </div>
+
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -115,10 +250,64 @@ const TranslationResult = ({
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400">Using downloaded language pack</span>
                     </div>
-                    <p className="text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-pretty">{text.replace('[OFFLINE] ', '')}</p>
+                    <div className={`relative p-4 rounded-lg ${isPlaying ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30' : ''}`}>
+                      {isPlaying && (
+                        <div className="absolute top-2 right-2">
+                          <svg className="w-5 h-5 text-blue-500 dark:text-blue-400 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 3.75a.75.75 0 00-1.264-.546L4.703 7H3.167a.75.75 0 00-.7.477A6.98 6.98 0 002 10a6.98 6.98 0 00.467 2.523.75.75 0 00.7.477h1.537l4.033 3.796A.75.75 0 0010 16.25V3.75zM15.95 5.05a.75.75 0 00-1.06 1.061 5.5 5.5 0 010 7.778.75.75 0 001.06 1.06a7 7 0 000-9.899z" />
+                            <path d="M13.829 7.172a.75.75 0 00-1.061 1.06 2.5 2.5 0 010 3.536.75.75 0 001.06 1.06a4 4 0 000-5.656z" />
+                          </svg>
+                        </div>
+                      )}
+                      {words.length > 0 ? (
+                        <p className="text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-pretty">
+                          {words.map((word, index) => (
+                            <React.Fragment key={index}>
+                              <span
+                                className={`${currentWord === index ? 'bg-blue-200 dark:bg-blue-700 px-1 py-0.5 rounded' : ''}
+                                  transition-all duration-200`}
+                              >
+                                {word}
+                              </span>
+                              {index < words.length - 1 ? ' ' : ''}
+                            </React.Fragment>
+                          ))}
+                        </p>
+                      ) : (
+                        <p className="text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-pretty">{text.replace('[OFFLINE] ', '')}</p>
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-pretty">{text}</p>
+                  <>
+                    <div className={`relative p-4 rounded-lg ${isPlaying ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30' : ''}`}>
+                      {isPlaying && (
+                        <div className="absolute top-2 right-2">
+                          <svg className="w-5 h-5 text-blue-500 dark:text-blue-400 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 3.75a.75.75 0 00-1.264-.546L4.703 7H3.167a.75.75 0 00-.7.477A6.98 6.98 0 002 10a6.98 6.98 0 00.467 2.523.75.75 0 00.7.477h1.537l4.033 3.796A.75.75 0 0010 16.25V3.75zM15.95 5.05a.75.75 0 00-1.06 1.061 5.5 5.5 0 010 7.778.75.75 0 001.06 1.06a7 7 0 000-9.899z" />
+                            <path d="M13.829 7.172a.75.75 0 00-1.061 1.06 2.5 2.5 0 010 3.536.75.75 0 001.06 1.06a4 4 0 000-5.656z" />
+                          </svg>
+                        </div>
+                      )}
+                      {words.length > 0 ? (
+                        <p className="text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-pretty">
+                          {words.map((word, index) => (
+                            <React.Fragment key={index}>
+                              <span
+                                className={`${currentWord === index ? 'bg-blue-200 dark:bg-blue-700 px-1 py-0.5 rounded' : ''}
+                                  transition-all duration-200`}
+                              >
+                                {word}
+                              </span>
+                              {index < words.length - 1 ? ' ' : ''}
+                            </React.Fragment>
+                          ))}
+                        </p>
+                      ) : (
+                        <p className="text-lg leading-relaxed text-gray-800 dark:text-gray-200 text-pretty">{text}</p>
+                      )}
+                    </div>
+                  </>
                 )}
               </motion.div>
             </div>

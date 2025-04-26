@@ -179,6 +179,30 @@ export const speakText = (text, languageCode, onEnd = () => {}) => {
     onEnd();
   };
 
+  // Fix for Chrome issue where speech synthesis stops after ~15 seconds
+  // This is a known bug in Chrome's implementation
+  const resumeInfinity = () => {
+    // Resume if paused
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+  };
+
+  // Keep checking and resuming if needed
+  const intervalId = setInterval(resumeInfinity, 1000);
+
+  // Clear interval when speech ends
+  utterance.onend = () => {
+    clearInterval(intervalId);
+    onEnd();
+  };
+
+  utterance.onerror = (event) => {
+    clearInterval(intervalId);
+    console.error('Speech synthesis error:', event);
+    onEnd();
+  };
+
   // Speak the text
   window.speechSynthesis.speak(utterance);
   return true;
@@ -208,6 +232,25 @@ export const fallbackTextToSpeech = (text, languageCode) => {
         // Use a similar voice or the default voice
         utterance.voice = similarVoice || voices[0];
 
+        // Fix for Chrome issue where speech synthesis stops after ~15 seconds
+        const resumeInfinity = () => {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+        };
+
+        // Keep checking and resuming if needed
+        const intervalId = setInterval(resumeInfinity, 1000);
+
+        // Clear interval when speech ends
+        utterance.onend = () => {
+          clearInterval(intervalId);
+        };
+
+        utterance.onerror = () => {
+          clearInterval(intervalId);
+        };
+
         // Speak the text
         window.speechSynthesis.speak(utterance);
         return true;
@@ -217,7 +260,29 @@ export const fallbackTextToSpeech = (text, languageCode) => {
     }
   }
 
-  // If all else fails, show a small notification instead of an alert
+  // If browser speech synthesis fails, try using the Web Audio API
+  try {
+    // Create a simple beep sound to indicate that text-to-speech would have played
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 440; // A4 note
+    gainNode.gain.value = 0.1; // Lower volume
+
+    oscillator.start();
+    setTimeout(() => {
+      oscillator.stop();
+    }, 300);
+  } catch (audioErr) {
+    console.error('Web Audio API error:', audioErr);
+  }
+
+  // Show a notification with the translated text
   const notification = document.createElement('div');
   notification.style.position = 'fixed';
   notification.style.bottom = '20px';

@@ -355,37 +355,89 @@ function App({ darkMode, toggleDarkMode }) {
     setError(null)
 
     try {
-      // First try to get audio from the server
-      const audioBlob = await translationService.textToSpeech(translatedText, targetLanguage)
+      // Remove any [OFFLINE] prefix if present
+      const cleanText = translatedText.startsWith('[OFFLINE]')
+        ? translatedText.replace('[OFFLINE] ', '')
+        : translatedText;
 
-      // If we have a real audio blob from the server, use it
-      if (audioBlob) {
-        const url = URL.createObjectURL(audioBlob)
-        const audio = new Audio(url)
-        audio.play()
+      console.log(`Playing audio for text: "${cleanText}" in language: ${targetLanguage}`);
 
-        // Clean up URL object when done
-        audio.onended = () => {
-          URL.revokeObjectURL(url)
-          setIsLoading(false)
+      // Try direct browser speech synthesis first - most reliable in deployed environments
+      const speechResult = speakText(cleanText, targetLanguage, () => {
+        console.log('Speech synthesis completed');
+        setIsLoading(false);
+      });
+
+      // If direct speech synthesis worked, we're done
+      if (speechResult) {
+        console.log('Successfully started speech synthesis');
+        return;
+      }
+
+      console.log('Direct speech synthesis failed, trying fallback methods');
+
+      // If direct speech synthesis fails, try to get audio from the server
+      try {
+        const audioBlob = await translationService.textToSpeech(cleanText, targetLanguage);
+
+        // If we have a real audio blob from the server, use it
+        if (audioBlob) {
+          console.log('Got audio blob from server, playing...');
+          const url = URL.createObjectURL(audioBlob);
+          const audio = new Audio(url);
+
+          // Set up event handlers
+          audio.onplay = () => console.log('Audio started playing');
+          audio.onended = () => {
+            console.log('Audio finished playing');
+            URL.revokeObjectURL(url);
+            setIsLoading(false);
+          };
+          audio.onerror = (e) => {
+            console.error('Audio playback error:', e);
+            URL.revokeObjectURL(url);
+            setIsLoading(false);
+
+            // Try fallback if server audio fails
+            fallbackTextToSpeech(cleanText, targetLanguage);
+          };
+
+          // Play the audio
+          const playPromise = audio.play();
+
+          // Handle play promise (required for modern browsers)
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.error('Audio play promise error:', error);
+              URL.revokeObjectURL(url);
+              setIsLoading(false);
+
+              // Try fallback if play promise fails
+              fallbackTextToSpeech(cleanText, targetLanguage);
+            });
+          }
+
+          return;
         }
-        return
+      } catch (serverError) {
+        console.error('Server audio error:', serverError);
       }
 
-      // Otherwise, use our enhanced browser speech synthesis
-      const speechResult = speakText(translatedText, targetLanguage, () => {
-        setIsLoading(false)
-      })
-
-      // If speech synthesis fails or isn't supported for this language, use fallback
-      if (!speechResult || !isSpeechSynthesisLanguageSupported(targetLanguage)) {
-        fallbackTextToSpeech(translatedText, targetLanguage)
-        setIsLoading(false)
-      }
+      // If all else fails, use our fallback
+      console.log('All audio methods failed, using ultimate fallback');
+      fallbackTextToSpeech(cleanText, targetLanguage);
+      setIsLoading(false);
     } catch (err) {
-      console.error('Text-to-speech error:', err)
-      setError('Failed to play audio. Please try again.')
-      setIsLoading(false)
+      console.error('Text-to-speech error:', err);
+      setError('Failed to play audio. Please try again.');
+      setIsLoading(false);
+
+      // Even if we get an error, try the fallback as a last resort
+      try {
+        fallbackTextToSpeech(translatedText, targetLanguage);
+      } catch (fallbackErr) {
+        console.error('Even fallback failed:', fallbackErr);
+      }
     }
   }
 
@@ -805,13 +857,6 @@ function App({ darkMode, toggleDarkMode }) {
               error={error}
               placeholder="Translation will appear here..."
               className="h-full"
-            />
-          </div>
-
-          <div className="card-footer">
-            <TranslationActions
-              translatedText={translatedText}
-              isLoading={isLoading}
               onPlayAudio={playTranslatedAudio}
             />
           </div>
