@@ -221,8 +221,9 @@ const translateText = async (text, sourceLanguage, targetLanguage) => {
       `Translate the following text to ${targetLanguageName}:\n\n"${text}"` :
       `Translate the following ${sourceLanguageName} text to ${targetLanguageName}:\n\n"${text}"`;
 
-    // Use the Groq API key from the environment variable if available
-    // This is a hardcoded key for the hackathon project
+    // IMPORTANT: Hardcoded Groq API key for the hackathon project
+    // This ensures it works in all environments including Vercel deployment
+    // For a production app, you would use a more secure approach
     const groqApiKey = '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';
 
     // Import axios if it's not already imported
@@ -236,125 +237,109 @@ const translateText = async (text, sourceLanguage, targetLanguage) => {
     console.log('- Using Groq API key:', groqApiKey.substring(0, 5) + '...');
 
     // Call Groq API directly with CORS proxy to avoid CORS issues in deployment
-    // Use a CORS proxy for deployment environments
+    // Check if we're in a production environment (deployed)
     const isProduction = window.location.hostname !== 'localhost' &&
                          window.location.hostname !== '127.0.0.1';
 
-    // Use a CORS proxy in production to avoid CORS issues
-    // We provide multiple CORS proxy options in case one doesn't work
-    const corsProxies = [
-      'https://cors-anywhere.herokuapp.com/',
-      'https://api.allorigins.win/raw?url=',
-      'https://corsproxy.io/?'
-    ];
+    // For Vercel deployment, we'll use our serverless function
+    // This avoids CORS issues completely
 
-    // Select a CORS proxy based on a simple hash of the text to distribute requests
-    const proxyIndex = isProduction
-      ? Math.abs(text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)) % corsProxies.length
-      : -1;
-
+    // In production, use the serverless function
+    // In development, use direct API call
     const apiUrl = isProduction
-      ? `${corsProxies[proxyIndex]}https://api.groq.com/openai/v1/chat/completions`
+      ? '/api/translate'  // This will call our Vercel serverless function
       : 'https://api.groq.com/openai/v1/chat/completions';
 
     console.log(`[Deployment Service] Using API URL: ${apiUrl}`);
 
-    const response = await axios.post(apiUrl, {
-      model: "llama3-8b-8192",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.3,
-      max_tokens: 1000,
-      top_p: 0.9
-    }, {
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-        // Add additional headers for CORS proxy if needed
-        ...(isProduction ? { 'X-Requested-With': 'XMLHttpRequest' } : {})
-      },
+    // Different request format based on environment
+    const requestData = isProduction
+      ? {
+          // For serverless function, send the text and languages
+          text,
+          sourceLanguage,
+          targetLanguage
+        }
+      : {
+          // For direct Groq API, send the full request
+          model: "llama3-8b-8192",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 1000,
+          top_p: 0.9
+        };
+
+    // Different headers based on environment
+    const headers = isProduction
+      ? {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      : {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin,
+          'Referer': window.location.origin
+        };
+
+    const response = await axios.post(apiUrl, requestData, {
+      headers,
       timeout: 15000 // 15 second timeout
     });
 
-    // Extract the translation from Groq's response
-    let translation = response.data.choices[0].message.content.trim();
+    // Extract the translation from the response
+    let translation;
 
-    // Remove quotes if present (both double and single quotes)
-    if ((translation.startsWith('"') && translation.endsWith('"')) ||
-        (translation.startsWith("'") && translation.endsWith("'"))) {
-      translation = translation.substring(1, translation.length - 1);
-    }
-
-    // Also remove any escaped quotes
-    translation = translation.replace(/\\"/g, '"').replace(/\\'/g, "'");
-
-    console.log('[Deployment Service] Successfully translated with Groq API:', translation);
-    return translation;
-  } catch (corsProxyError) {
-    console.error('[Deployment Service] Error using Groq API with CORS proxy:', corsProxyError.message);
-    console.log('[Deployment Service] Trying direct API call without CORS proxy as a last resort');
-
-    try {
-      // Try a direct call to the Groq API without a CORS proxy as a last resort
-      // This might work in some browsers/environments
-      const directResponse = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-        model: "llama3-8b-8192",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000,
-        top_p: 0.9
-      }, {
-        headers: {
-          'Authorization': `Bearer ${groqApiKey}`,
-          'Content-Type': 'application/json',
-          'Origin': window.location.origin
-        },
-        timeout: 15000 // 15 second timeout
-      });
-
-      // Extract the translation from Groq's response
-      let directTranslation = directResponse.data.choices[0].message.content.trim();
+    if (isProduction) {
+      // For serverless function, the translation is directly in the response
+      translation = response.data.translation;
+    } else {
+      // For direct Groq API, extract from the choices
+      translation = response.data.choices[0].message.content.trim();
 
       // Remove quotes if present (both double and single quotes)
-      if ((directTranslation.startsWith('"') && directTranslation.endsWith('"')) ||
-          (directTranslation.startsWith("'") && directTranslation.endsWith("'"))) {
-        directTranslation = directTranslation.substring(1, directTranslation.length - 1);
+      if ((translation.startsWith('"') && translation.endsWith('"')) ||
+          (translation.startsWith("'") && translation.endsWith("'"))) {
+        translation = translation.substring(1, translation.length - 1);
       }
 
       // Also remove any escaped quotes
-      directTranslation = directTranslation.replace(/\\"/g, '"').replace(/\\'/g, "'");
+      translation = translation.replace(/\\"/g, '"').replace(/\\'/g, "'");
+    }
 
-      console.log('[Deployment Service] Successfully translated with direct Groq API call:', directTranslation);
-      return directTranslation;
-    } catch (directApiError) {
-      console.error('[Deployment Service] Error using direct Groq API call:', directApiError.message);
-      console.log('[Deployment Service] Falling back to dictionary and mock translations');
+    console.log('[Deployment Service] Successfully translated with Groq API:', translation);
+    return translation;
+  } catch (apiError) {
+    console.error('[Deployment Service] Error using API:', apiError.message);
+    console.log('[Deployment Service] Falling back to dictionary and mock translations');
 
-      // 1. Check if we have a direct translation in our dictionary
-      if (translations[targetLanguage] && translations[targetLanguage][text]) {
-        console.log('[Deployment Service] Using direct translation from dictionary');
-        return translations[targetLanguage][text];
-      }
+    // If we're in production, we've already tried the serverless function
+    // If we're in development, we've already tried the direct API call
+    // In both cases, we'll now fall back to our dictionary and mock translations
 
-      // 2. Check for partial matches in our dictionary
-      if (translations[targetLanguage]) {
-        for (const [phrase, translation] of Object.entries(translations[targetLanguage])) {
-          if (text.toLowerCase().includes(phrase.toLowerCase())) {
-            console.log(`[Deployment Service] Found partial match: "${phrase}" in text`);
-            return text.replace(new RegExp(phrase, 'i'), translation);
-          }
+    // 1. Check if we have a direct translation in our dictionary
+    if (translations[targetLanguage] && translations[targetLanguage][text]) {
+      console.log('[Deployment Service] Using direct translation from dictionary');
+      return translations[targetLanguage][text];
+    }
+
+    // 2. Check for partial matches in our dictionary
+    if (translations[targetLanguage]) {
+      for (const [phrase, translation] of Object.entries(translations[targetLanguage])) {
+        if (text.toLowerCase().includes(phrase.toLowerCase())) {
+          console.log(`[Deployment Service] Found partial match: "${phrase}" in text`);
+          return text.replace(new RegExp(phrase, 'i'), translation);
         }
       }
-
-      // 3. Generate a mock translation that looks like the target language
-      console.log('[Deployment Service] Using generated translation for', targetLanguage);
-      return generateMockTranslation(text, targetLanguage);
     }
+
+    // 3. Generate a mock translation that looks like the target language
+    console.log('[Deployment Service] Using generated translation for', targetLanguage);
+    return generateMockTranslation(text, targetLanguage);
   }
 };
 
