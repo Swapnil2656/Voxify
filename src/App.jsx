@@ -26,7 +26,6 @@ import DirectTranslation from './components/DirectTranslation'
 import DirectTextTranslation from './components/DirectTextTranslation'
 import SimpleCameraInput from './components/SimpleCameraInput'
 import CameraOcr from './components/CameraOcr'
-import TestTranslation from './components/TestTranslation'
 // AI Learning Hub is now a separate page
 // import AILearningHub from './components/AILearningHub'
 // import AILearningHub from './components/AILearningHub'
@@ -903,21 +902,6 @@ function App({ darkMode, toggleDarkMode }) {
 
       {/* Conversation Mode Section - Using Dual Speaker API */}
       <DualSpeakerConversationMode />
-
-      {/* Test Translation Component */}
-      <div className="py-16 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Test Translation
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              This is a test component to verify that our translation service is working correctly.
-            </p>
-          </div>
-          <TestTranslation />
-        </div>
-      </div>
 
       {/* Camera Translation is now integrated into the main translation area */}
     </Layout>
