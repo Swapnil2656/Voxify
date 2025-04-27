@@ -139,7 +139,7 @@ Highlight the most important features of your project:
 
 ## 📽️ Demo & Deliverables
 
-- **Demo Video Link:** [(https://youtu.be/hgpeOU7-5Bs)]  
+- **Demo Video Link:** [(https://youtu.be/hgpeOU7-5Bs) / (https://youtu.be/BMAoKRFG1xQ)]  
  
 
 ---
