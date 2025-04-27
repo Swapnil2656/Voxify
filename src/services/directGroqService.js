@@ -57,10 +57,10 @@ const translations = {
   }
 };
 
-// Groq API key - Replace with your actual API key
+// Groq API key - Hardcoded for hackathon purposes
 // In a production app, this should be stored securely and not in client-side code
-// For the hackathon, we'll use a mock translation service if no API key is provided
-const GROQ_API_KEY = ""; // You need to add your Groq API key here
+// For the hackathon, we'll use this key directly in the frontend for simplicity
+const GROQ_API_KEY = "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";
 
 /**
  * Get language name from language code
@@ -80,24 +80,15 @@ const getLanguageName = (code) => {
  * @returns {Promise<Object>} - Translation result
  */
 const translateText = async (text, sourceLanguage = 'en', targetLanguage = 'es') => {
+  console.log(`Translating text from ${sourceLanguage} to ${targetLanguage}: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+
   try {
     // Get the target language name
     const targetLangName = getLanguageName(targetLanguage);
 
-    // If no API key is provided, use the mock translation
-    if (!GROQ_API_KEY) {
-      console.log('No Groq API key provided, using mock translation');
-      return {
-        success: true,
-        translation: generateMockTranslation(text, targetLanguage),
-        sourceLanguage,
-        targetLanguage
-      };
-    }
-
-    // Create the system prompt
+    // Create the system prompt - emphasize returning ONLY the translation
     const systemPrompt =
-      "You are a professional multilingual translator for a travel and communication app. Translate text precisely and naturally.";
+      "You are a professional multilingual translator for a travel and communication app. Translate text precisely and naturally. Return ONLY the translated text with no additional explanations, notes, or quotation marks.";
 
     // Create the user prompt
     const userPrompt =
@@ -105,55 +96,102 @@ const translateText = async (text, sourceLanguage = 'en', targetLanguage = 'es')
 
 "${text}"
 
-Respond with ONLY the translated text, nothing else.`;
+Important: Respond with ONLY the translated text, nothing else. No quotes, no explanations.`;
 
-    // Call the Groq API directly
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 1000,
-        top_p: 0.9
-      })
-    });
+    console.log('Calling Groq API directly...');
 
-    // Parse the response
-    const data = await response.json();
+    // Call the Groq API directly with timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    // Check if the response is valid
-    if (!response.ok) {
-      console.error('Groq API error:', data);
-      throw new Error(data.error?.message || 'Failed to translate text');
+    try {
+      // Call the Groq API directly
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: "llama3-8b-8192",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 1000,
+          top_p: 0.9
+        }),
+        signal: controller.signal
+      });
+
+      // Clear the timeout since we got a response
+      clearTimeout(timeoutId);
+
+      // Parse the response
+      const data = await response.json();
+
+      console.log('Groq API response received:', data);
+
+      // Check if the response is valid
+      if (!response.ok) {
+        console.error('Groq API error:', data);
+        throw new Error(data.error?.message || 'Failed to translate text');
+      }
+
+      // Check if we have a valid response structure
+      if (!data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+        console.error('Invalid Groq API response structure:', data);
+        throw new Error('Invalid API response structure');
+      }
+
+      // Extract the translation from the response
+      let translation = data.choices[0].message.content.trim();
+
+      // Remove quotes if present
+      if ((translation.startsWith('"') && translation.endsWith('"')) ||
+          (translation.startsWith("'") && translation.endsWith("'"))) {
+        translation = translation.substring(1, translation.length - 1);
+      }
+
+      console.log('Translation successful:', translation);
+
+      return {
+        success: true,
+        translation,
+        sourceLanguage,
+        targetLanguage
+      };
+    } catch (fetchError) {
+      // Clear the timeout to prevent memory leaks
+      clearTimeout(timeoutId);
+
+      // Check if the error was due to timeout
+      if (fetchError.name === 'AbortError') {
+        console.error('Groq API request timed out');
+        throw new Error('Translation request timed out. Please try again.');
+      }
+
+      // Re-throw other errors
+      throw fetchError;
     }
-
-    // Extract the translation from the response
-    let translation = data.choices[0].message.content.trim();
-
-    // Remove quotes if present
-    if ((translation.startsWith('"') && translation.endsWith('"')) ||
-        (translation.startsWith("'") && translation.endsWith("'"))) {
-      translation = translation.substring(1, translation.length - 1);
-    }
-
-    return {
-      success: true,
-      translation,
-      sourceLanguage,
-      targetLanguage
-    };
   } catch (error) {
     console.error('Translation error:', error);
 
-    // Return a fallback translation
+    // Check if we have a translation in our dictionary
+    if (translations[targetLanguage] && translations[targetLanguage][text]) {
+      console.log('Using dictionary translation as fallback');
+      return {
+        success: true,
+        translation: translations[targetLanguage][text],
+        sourceLanguage,
+        targetLanguage,
+        fromDictionary: true
+      };
+    }
+
+    // Return a fallback mock translation
+    console.log('Using mock translation as fallback');
     return {
       success: true, // Still return success to avoid breaking the UI
       translation: generateMockTranslation(text, targetLanguage),
@@ -261,6 +299,8 @@ const generateMockTranslation = (text, targetLanguage) => {
  */
 const recognizeAndTranslate = async (imageDataUrl, sourceLanguage = 'en', targetLanguage = 'es') => {
   try {
+    console.log(`Starting image recognition and translation from ${sourceLanguage} to ${targetLanguage}`);
+
     // For this implementation, we'll use a simple mock OCR
     // In a real implementation, you would use a proper OCR service
 
@@ -271,10 +311,22 @@ const recognizeAndTranslate = async (imageDataUrl, sourceLanguage = 'en', target
       hash = ((hash << 5) - hash) + sampleStr.charCodeAt(i);
       hash = hash & hash; // Convert to 32bit integer
     }
+    hash = Math.abs(hash);
 
     // Use the hash to select a predefined text
+    // Expanded list of sample texts that might be found in images
     const phrases = [
       "Hello, How are You?",
+      "Welcome to our restaurant! Today's special: Grilled salmon with lemon sauce - $15.99",
+      "CAUTION: Wet Floor. Please watch your step.",
+      "Opening Hours:\nMonday-Friday: 9:00 AM - 6:00 PM\nSaturday: 10:00 AM - 4:00 PM\nSunday: Closed",
+      "Gate A12\nFlight: BA287\nDeparture: 14:30\nDestination: London",
+      "Museum Entrance\nAdults: $12\nStudents: $8\nChildren under 6: Free",
+      "SALE! 50% OFF\nAll winter items\nLimited time only",
+      "WiFi Password: Guest2023\nNetwork: Visitor_Access",
+      "Emergency Exit\nIn case of fire use stairs\nDo not use elevator",
+      "Tourist Information Center\n123 Main Street\nPhone: +1-555-123-4567",
+      "Bus Schedule\nRoute 42\nEvery 15 minutes from 6:00 AM to 11:00 PM",
       "Good morning",
       "Thank you",
       "Where is the bathroom?",
@@ -283,11 +335,14 @@ const recognizeAndTranslate = async (imageDataUrl, sourceLanguage = 'en', target
       "Excuse me"
     ];
 
-    const index = Math.abs(hash) % phrases.length;
+    const index = hash % phrases.length;
     const extractedText = phrases[index];
+    console.log('Extracted text from image:', extractedText);
 
     // Translate the extracted text using Groq API
+    console.log('Calling Groq API for translation...');
     const translationResult = await translateText(extractedText, sourceLanguage, targetLanguage);
+    console.log('Translation result:', translationResult);
 
     // Return the combined result
     return {

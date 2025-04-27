@@ -545,12 +545,12 @@ function App({ darkMode, toggleDarkMode }) {
           </span>
         </motion.button>
         <motion.button
-          onClick={() => setActiveTab('image')}
-          className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'image'
+          onClick={() => setActiveTab('camera')}
+          className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'camera'
             ? 'bg-blue-600 text-white shadow-md'
             : 'text-gray-600 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-black/10'}`}
           whileTap={{ scale: 0.97 }}
-          aria-label="Switch to immggtranslation"
+          aria-label="Switch to camera translation"
         >
           <span className="flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1.5">
@@ -722,7 +722,7 @@ function App({ darkMode, toggleDarkMode }) {
                     )}
                   </div>
                 </div>
-              ) : (
+              ) : activeTab === 'camera' ? (
                 /* Camera OCR Component */
                 <CameraOcr
                   sourceLanguage={sourceLanguage}
@@ -761,6 +761,13 @@ function App({ darkMode, toggleDarkMode }) {
                       });
                   }}
                 />
+              ) : (
+                /* Default case - should never happen */
+                <div className="flex flex-col items-center justify-center p-8">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Please select a translation method from the tabs above.
+                  </p>
+                </div>
               )}
 
               {/* Error message */}
